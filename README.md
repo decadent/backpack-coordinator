@@ -27,21 +27,21 @@ backpack-coordinator <zk_servers> </zk/root> <listen_host> <listen_port>
 This section will show an example where we create a Backpack cluster
 from six nodes on two servers with 2x data replication for failover.
 
-Server will have hostnames `one` and `two`.
+The servers have hostnames `one` and `two`.
 
 Final setup will look like this:
 
-|  one |    two  |                           |
-|------|---------|---------------------------|
-| 001  |  004    | ← shard #1 on this level |
-| 002  |  005    | ← shard #2 on this level |
-| 003  |  006    | ← shard #3 on this level |
+|  one |    two  |             |
+|------|---------|-------------|
+| 001  |  004    | ← shard #1 |
+| 002  |  005    | ← shard #2 |
+| 003  |  006    | ← shard #3 |
 
 
 #### Installing Backpack instances
 
 Please go to [Backpack project page](https://github.com/Topface/backpack)
-to see how to install Backpack instances. Install six of them:
+to see how to install Backpack instances. Run six of them:
 
 * http://one:10001/ (node 001)
 * http://one:10002/ (node 002)
@@ -66,9 +66,7 @@ as many servers as you like, but more servers require more time to process).
 Remember that if you have one redis then you make it the single point if failure,
 so make some more. Suppose we have redis instances on one:13001 and two:13002.
 
-Initialize coordinator settings.
-
-`backpack-coordinator-init` should be called like this: `backpack-coordinator-init <zk_servers> </zk/root> <queue_key> <redis_host1:redis_port2,...>`
+Initialize coordinator settings. `backpack-coordinator-init` should be called like this: `backpack-coordinator-init <zk_servers> </zk/root> <queue_key> <redis_host1:redis_port2,...>`
 
 In this example, the coordinator package is installed in /opt/backpack-coordinator:
 
@@ -91,8 +89,9 @@ Now you may run coordinator services on `one` and `two`:
 
 #### Adding capacity
 
-Coordinator nodes will automatically update their configuration (just as replicators do),
-so we may add more Backpack nodes on the fly. Let's make three shards, two nodes each.
+Coordinator nodes automatically update their configuration (just as `backpack-replicator`
+nodes do), so we may add more Backpack nodes on the fly. Let's create three shards,
+two nodes each.
 
 We need to register the servers first.
 
@@ -125,8 +124,9 @@ Good! We're done setting up the coordinators. Set up replicators and you're read
 
 #### Setting up replication service
 
-Coordinator only upload to one Backpack node and create a task to replicate data to the rest of them.
-You should set up [backpack-replicator](http://github.com/Topface/backpack-replicator) to make this work.
+The coordinator only uploads to one Backpack node and creates a task to replicate
+data to the rest of them. You should set up [backpack-replicator](http://github.com/Topface/backpack-replicator)
+to make this work.
 
 Just run as many replicators as your load requires. Arguments are Zookeeper servers
 and Zookeeper root from backpack-coordinator. Let's spawn one replicator per physical
@@ -143,7 +143,7 @@ server.
 ### Uploading files
 
 Make a PUT request to any of the coordinator nodes and receive the id of the shard
-in which the file was stored.
+in which the file is stored.
 
 ```bash
 $ echo 'hello, backpack!' > hello.txt
@@ -161,7 +161,7 @@ to every node in the shard.
 
 In a real-world application, you might have Nginx in front of Backpack nodes.
 
-Configuration for our case will look like this (for host `one`):
+Configuration for our case looks like this (on the host `one`):
 
 ```
 upstream backpack-shard-1 {
@@ -188,7 +188,7 @@ server {
     proxy_send_timeout 5s;
     proxy_read_timeout 10s;
 
-    # retry on the next node if one failed or returned 404
+    # retry on the next node if a request fails or returns the 404 status
     proxy_next_upstream error timeout http_404 http_502 http_504;
 
     # this is important
@@ -197,7 +197,7 @@ server {
         return 403;
     }
 
-    # extract shard number and file name from url
+    # extract the shard number and the file name from the url
     location ~ ^/(.*):(.*)$ {
         set $shard $1;
         set $file  $2;
