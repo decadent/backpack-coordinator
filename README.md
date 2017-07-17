@@ -1,7 +1,7 @@
 backpack-coordinator
 ====
 
-Coordination service for backpack cluster.
+Coordination service for a Backpack cluster.
 
 ### Installation
 
@@ -11,26 +11,37 @@ npm install backpack-coordinator
 
 ### Usage
 
-This section will show an example where we'll create backpack cluster
-from 6 nodes on 2 servers with 2x data replication for failover.
+Run the coordinator as follows:
+
+```
+backpack-coordinator <zk_servers> </zk/root> <listen_host> <listen_port>
+```
+
+* zk_servers: a list of Zookeeper servers to connect to, separated with commas.
+* /zk/root: the root node in the Zookeeper for Backpack's data.
+* listen_host: local host name or IP to listen on.
+* listen_port: port to listen on.
+
+### Example
+
+This section will show an example where we create a Backpack cluster
+from six nodes on two servers with 2x data replication for failover.
 
 Server will have hostnames `one` and `two`.
 
-Final installation will look like this:
+Final setup will look like this:
 
-```
-  one     two
-+-----+ +-----+
-+ 001 + + 004 + <- shard #1 on this level
-+ 002 + + 005 + <- shard #2 on this level
-+ 003 + + 006 + <- shard #3 on this level
-+-----+ +-----+
-```
+|  one |    two  |                           |
+|------|---------|---------------------------|
+| 001  |  004    | ← shard #1 on this level |
+| 002  |  005    | ← shard #2 on this level |
+| 003  |  006    | ← shard #3 on this level |
 
-#### Installing backpack instances
 
-Please go to [backpack project page](https://github.com/Topface/backpack)
-to see how to install backpack instances. Install 6 of them:
+#### Installing Backpack instances
+
+Please go to [Backpack project page](https://github.com/Topface/backpack)
+to see how to install Backpack instances. Install six of them:
 
 * http://one:10001/ (node 001)
 * http://one:10002/ (node 002)
@@ -39,35 +50,36 @@ to see how to install backpack instances. Install 6 of them:
 * http://two:10005/ (node 005)
 * http://two:10005/ (node 006)
 
-#### Setting up coordination service
+#### Setting up coordination services
 
-Let's create coordination service on each physical server:
+Now we create one coordination service on each physical server:
 
-* http://one:12001/ - coordinator #1
-* http://two:12002/ - coordinator #2
+* http://one:12001/ — coordinator #1
+* http://two:12002/ — coordinator #2
 
-Let's assume you have zookeeper service is running on one.local on port 2181.
-In real world you'll need 3 or 5 (2n+1 rule) zookeeper instances to eliminate
-single point of failure of your cluster.
+Let's assume the Zookeeper service is running on one.local on port 2181.
+(In the real world, you'll need 3 or 5 (2n+1 rule) Zookeeper instances to eliminate
+the single point of failure in your cluster.)
 
-You also need some redis servers to hold replication queue.
-You may have whatever amount you like, but it will affect processing time
-(more instances -> more time to process). Remember that if you have one redis then
-you make it single point if failure, so make some more.
-Let's assume that we have redis instances on one:13001 and two:13002.
+You also need some redis servers to store the replication queue. You may have
+as many servers as you like, but more servers require more time to process).
+Remember that if you have one redis then you make it the single point if failure,
+so make some more. Suppose we have redis instances on one:13001 and two:13002.
 
-Initialize coordinator settings (coordinator package is installed in /opt/bacpack-coordinator):
+Initialize coordinator settings.
+
+`backpack-coordinator-init` should be called like this: `backpack-coordinator-init <zk_servers> </zk/root> <queue_key> <redis_host1:redis_port2,...>`
+
+In this example, the coordinator package is installed in /opt/backpack-coordinator:
 
 ```
-# You may run this without arguments to see help about it
-
 $ /opt/backpack-coordinator/bin/backpack-coordinator-init one.local:2181 /backpack backpack-queue one:13001,two:13002
 Servers map initialized
 Shards map initialized
 Queue initialized
 ```
 
-Now you may run coordinator service on `one` and `two`:
+Now you may run coordinator services on `one` and `two`:
 
 ```
 [one] $ /opt/backpack-coordinator/bin/backpack-coordinator one.local:2181 /backpack one 12001
@@ -79,10 +91,12 @@ Now you may run coordinator service on `one` and `two`:
 
 #### Adding capacity
 
-Coordinator nodes will automatically update their configuration (replicators too),
-so we may add more backpack nodes on the fly. Let's make 3 shards of 2 nodes each.
+Coordinator nodes will automatically update their configuration (just as replicators do),
+so we may add more Backpack nodes on the fly. Let's make three shards, two nodes each.
 
-We need to register servers first:
+We need to register the servers first.
+
+The general syntax is: `backpack-coordinator-add-server <zk_servers> </zk/root> <id> <url>`.
 
 ```
 $ /opt/backpack-coordinator/bin/backpack-coordinator-add-server one.local:2181 /backpack 1 http://one:10001
@@ -93,7 +107,7 @@ $ /opt/backpack-coordinator/bin/backpack-coordinator-add-server one.local:2181 /
 $ /opt/backpack-coordinator/bin/backpack-coordinator-add-server one.local:2181 /backpack 6 http://two:10006
 ```
 
-Now register shards. Let's make them 100gb each.
+Now register the shards. Let's make them 100 GB each.
 
 ```
 $ /opt/backpack-coordinator/bin/backpack-coordinator-add-shard one.local:2181 /backpack 1 1,4 100gb
@@ -101,22 +115,22 @@ $ /opt/backpack-coordinator/bin/backpack-coordinator-add-shard one.local:2181 /b
 $ /opt/backpack-coordinator/bin/backpack-coordinator-add-shard one.local:2181 /backpack 1 3,6 100gb
 ```
 
-Shards are added as read-only by default, we need to enable them manually.
+Shards are added as read-only by default, you'll need to enable writing manually:
 
 ```
 $ /opt/backpack-coordinator/bin/backpack-coordinator-enable-shard one.local:2181 /backpack 1
 ```
 
-Good! We're done with setting up coordinators. Set up replicators and you're ready to go!
+Good! We're done setting up the coordinators. Set up replicators and you're ready to go!
 
 #### Setting up replication service
 
-Coordinator only upload to one backpack node and create task to replicate data to the rest of them.
-You should set up [backpack-replicator](http://github.com/Topface/backpack-replicator) to make it work.
+Coordinator only upload to one Backpack node and create a task to replicate data to the rest of them.
+You should set up [backpack-replicator](http://github.com/Topface/backpack-replicator) to make this work.
 
-This is very simple, just spawn as many replicators as your load require.
-Arguments are zookeeper servers and zookeeper root from backpack-coordinator.
-Let's spawn one replicator per physical server.
+Just run as many replicators as your load requires. Arguments are Zookeeper servers
+and Zookeeper root from backpack-coordinator. Let's spawn one replicator per physical
+server.
 
 ```
 [one] $ /opt/backpack-replicator/bin/backpack-replicator one.local:2181 /backpack
@@ -128,24 +142,26 @@ Let's spawn one replicator per physical server.
 
 ### Uploading files
 
-Just make PUT request to whatever coordinator node you like and receive used shard.
+Make a PUT request to any of the coordinator nodes and receive the id of the shard
+in which the file was stored.
 
-```
-$ echo hello, backpack! > hello.txt
+```bash
+$ echo 'hello, backpack!' > hello.txt
 $ curl -X PUT -T hello.txt http://two:12002/hi.txt
 {"shard_id":"1"}
 $ curl http://one:10001/hi.txt
 hello, backpack!
 ```
 
-If get from the first node failed with 404 then you should try next node in shard.
-Eventually replicators will put new file to every node in shard.
+If a GET request to the first node fails with the 404 status, you should try
+the next node in the shard. Eventually replicators will copy the new file
+to every node in the shard.
 
 ### Nginx recipe
 
-Real-world application is nginx behind in front of backpack nodes.
+In a real-world application, you might have Nginx in front of Backpack nodes.
 
-Configuration for our case will look like (for host one):
+Configuration for our case will look like this (for host `one`):
 
 ```
 upstream backpack-shard-1 {
@@ -175,8 +191,8 @@ server {
     # retry on the next node if one failed or returned 404
     proxy_next_upstream error timeout http_404 http_502 http_504;
 
-    # this is important as hell
-    # don't let anyone upload files from your frontend :)
+    # this is important
+    # don't let anyone upload files via the frontend
     if ($request_method !~ ^(GET|HEAD)$ ) {
         return 403;
     }
@@ -191,9 +207,9 @@ server {
 }
 ```
 
-With this config you'll be able to downloaded uploaded file by url:
-[http://one/1:hi.txt](http://one/1:hi.txt). Start nginx on more than
-one physical server to eliminate single point of failure.
+With this config, you'll be able to download a stored file at this url:
+[http://one/1:hi.txt](http://one/1:hi.txt). Run nginx on more than
+one physical server to eliminate the single point of failure.
 
 ### Todo
 
