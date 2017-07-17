@@ -6,6 +6,7 @@
         coordinator;
 
     if (args.length < 2) {
+        console.error("Prints out the list of shards with information on each one.");
         console.error("Usage: backpack-coordinator-dump-shards <zk_servers> </zk/root>");
         process.exit(1);
     }

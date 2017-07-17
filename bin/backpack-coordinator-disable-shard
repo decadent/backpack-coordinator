@@ -6,7 +6,11 @@
         coordinator;
 
     if (args.length < 3) {
+        console.error("Switches a shard to the read-only mode.");
         console.error("Usage: backpack-coordinator-disable-shard <zk_servers> </zk/root> <id>");
+        console.error("    zk_servers: Zookeeper servers, separated with commas");
+        console.error("    /zk/root: Zookeeper node with Backpack data");
+        console.error("    id: ID of the shard which should be set to read-only");
         process.exit(1);
     }
 

@@ -6,6 +6,7 @@
         coordinator;
 
     if (args.length < 2) {
+        console.error("Prints out currently used space and total allotted space for each shard.");
         console.error("Usage: backpack-coordinator-print-stats <zk_servers> </zk/root>");
         process.exit(1);
     }
