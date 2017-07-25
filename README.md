@@ -40,8 +40,8 @@ Final setup will look like this:
 
 #### Installing Backpack instances
 
-Please go to [Backpack project page](https://github.com/Topface/backpack)
-to see how to install Backpack instances. Run six of them:
+[Please see the Backpack project page](https://github.com/Topface/backpack)
+for the instructions on installing Backpack instances. Run six of them:
 
 * http://one:10001/ (node 001)
 * http://one:10002/ (node 002)
@@ -61,8 +61,8 @@ Let's assume the Zookeeper service is running on one.local on port 2181.
 (In the real world, you'll need 3 or 5 (2n+1 rule) Zookeeper instances to eliminate
 the single point of failure in your cluster.)
 
-You also need some redis servers to store the replication queue. You may have
-as many servers as you like, but more servers require more time to process).
+You also need redis servers to store the replication queue. You may have
+as many servers as you like, but more servers require more time to process.
 Remember that if you have one redis then you make it the single point if failure,
 so make some more. Suppose we have redis instances on one:13001 and two:13002.
 

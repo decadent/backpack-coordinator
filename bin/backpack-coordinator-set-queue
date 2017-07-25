@@ -6,7 +6,15 @@
         coordinator, servers;
 
     if (args.length < 4) {
+        console.error("Sets the Redis queue servers for the Coordinator to use.");
+        console.error("");
         console.error("Usage: backpack-coordinator-set-queue <zk_servers> </zk/root> <key> <host1:port1,host2:port2,..>");
+        console.error("    zk_servers:  Zookeeper servers for Coordinator settings, separated with commas");
+        console.error("    /zk/root:    Zookeeper root node containing Coordinator settings data");
+        console.error("    key:         Redis key for the queue");
+        console.error("    host1:port1,host2:port2,…:  Redis queue servers");
+        console.error("");
+        console.error("The new specified servers replace the previous ones, not added to them.");
         process.exit(1);
     }
 
